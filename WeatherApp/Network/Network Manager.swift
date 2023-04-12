@@ -7,62 +7,66 @@
 
 import Foundation
 
+enum NetworkError: Error {
+    case dataError
+    case invalidPath
+    case decoding
+    
+    var description: String {
+        switch self {
+        case .dataError:
+            return "There's an issue with the data"
+        case .invalidPath:
+            return "Invalid Path"
+        case .decoding:
+            return "There was an error decoding the type"
+        }
+    }
+}
+
 class NetworkManager {
     
     typealias NetworkResponse = (data: Data, response: URLResponse)
-    
     static let shared = NetworkManager()
     
     private let session = URLSession.shared
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
       
-    func getData<D: Decodable>(from endpoint: APIEndpoints) async throws -> D {
-        let request = try createRequest(from: endpoint)
-        let response: NetworkResponse = try await session.data(for: request)
-        return try decoder.decode(D.self, from: response.data)
-    }
-    
-    func sendData<D: Decodable, E: Encodable>(from endpoint: APIEndpoints, with body: E) async throws -> D {
-        let request = try createRequest(from: endpoint)
-        let data = try encoder.encode(body)
-        let response: NetworkResponse = try await session.upload(for: request, from: data)
-        return try decoder.decode(D.self, from: response.data)
+    func makeRequest<T: Decodable>(with url: URL, httpMethod: String, requestBody: Data?, completion: @escaping (Result<T, Error>) -> Void) {
+        var request = URLRequest(url: url)
+        request.httpMethod = httpMethod
+        request.httpBody = requestBody
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+            guard let data = data else {
+                completion(.failure(NetworkError.dataError))
+                return
+            }
+
+            do {
+                let decoder = JSONDecoder()
+                let decodedData = try decoder.decode(T.self, from: data)
+                completion(.success(decodedData))
+            } catch {
+                completion(.failure(NetworkError.decoding))
+            }
+        }
+
+        task.resume()
     }
 }
 
-private extension NetworkManager {
+extension NetworkManager {
     
     func createRequest(from endpoint: APIEndpoints) throws -> URLRequest {
-        guard
-            let urlPath = URL(string: APIHelper.baseURL.appending(endpoint.path)),
-            var urlComponents = URLComponents(string: urlPath.path)
-        else {
-            throw NetworkError.invalidPath
-        }
         
-        if let parameters = endpoint.parameters {
-            urlComponents.queryItems = parameters
-        }
-        
-        var request = URLRequest(url: urlPath)
-        request.httpMethod = endpoint.method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        return request
-    }
-}
+        guard var components = URLComponents(string: APIHelper.baseURL) else { throw NetworkError.invalidPath }
+        components.path = endpoint.path
+        components.queryItems = endpoint.parameters
+        guard let urlPath = components.url else { throw NetworkError.invalidPath }
 
-
-enum NetworkError: Error {
-    case invalidPath
-    case decoding
-    
-    var description: String {
-        switch self {
-        case .invalidPath:
-            return "Invalid Path"
-        case .decoding:
-            return "There was an error decoding the type"
-        }
+        return URLRequest(url: urlPath)
     }
 }

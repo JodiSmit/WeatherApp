@@ -19,13 +19,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = UIWindow(windowScene: windowScene)
+
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let viewController = storyboard.instantiateViewController(withIdentifier: "CurrentConditionsViewController") as! CurrentConditionsViewController
+        let rootViewController = storyboard.instantiateViewController(withIdentifier: "CurrentConditionsViewController") as! CurrentConditionsViewController
         let viewModel = CurrentWeatherViewModel()
-        viewController.viewModel = viewModel
-        window.rootViewController = viewController
-        self.window = window
+        rootViewController.viewModel = viewModel
+        
+        let navigationController = UINavigationController(rootViewController: rootViewController)
+        window.rootViewController = navigationController
         window.makeKeyAndVisible()
+        self.window = window
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

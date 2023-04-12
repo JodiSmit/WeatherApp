@@ -7,7 +7,6 @@
 
 import Foundation
 
-
 // MARK: - WeatherObject
 struct WeatherObject: Codable {
     let coord: Coord
@@ -16,7 +15,6 @@ struct WeatherObject: Codable {
     let main: Main
     let visibility: Int
     let wind: Wind
-    let rain: Rain
     let clouds: Clouds
     let dt: Int
     let sys: Sys
@@ -38,7 +36,7 @@ struct Coord: Codable {
 // MARK: - Main
 struct Main: Codable {
     let temp, feelsLike, tempMin, tempMax: Double
-    let pressure, humidity, seaLevel, grndLevel: Int
+    let pressure, humidity: Int
 
     enum CodingKeys: String, CodingKey {
         case temp
@@ -46,17 +44,6 @@ struct Main: Codable {
         case tempMin = "temp_min"
         case tempMax = "temp_max"
         case pressure, humidity
-        case seaLevel = "sea_level"
-        case grndLevel = "grnd_level"
-    }
-}
-
-// MARK: - Rain
-struct Rain: Codable {
-    let the1H: Double
-
-    enum CodingKeys: String, CodingKey {
-        case the1H = "1h"
     }
 }
 
@@ -77,5 +64,4 @@ struct Weather: Codable {
 struct Wind: Codable {
     let speed: Double
     let deg: Int
-    let gust: Double
 }
