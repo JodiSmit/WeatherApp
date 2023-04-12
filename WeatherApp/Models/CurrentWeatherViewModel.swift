@@ -29,7 +29,6 @@ class CurrentWeatherViewModel {
     }
     var gozioLocation: CurrentLocation
     let networkManager = NetworkManager.shared
-    
     var currentWeatherImage: UIImage?
     var currentLocation: String?
     var currentHighLow: String?
