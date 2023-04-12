@@ -8,8 +8,8 @@
 import Foundation
 
 
-// MARK: - WeatherResult
-struct WeatherResult: Codable {
+// MARK: - WeatherObject
+struct WeatherObject: Codable {
     let coord: Coord
     let weather: [Weather]
     let base: String

@@ -7,8 +7,8 @@
 
 import Foundation
 
-enum APIEndpoint {
-    case getCurrentWeather(latitude: String, longitude: String, units: String?)
+enum APIEndpoints {
+    case getCurrentWeather(latitude: String, longitude: String)
     
     enum Method: String {
         case GET
@@ -18,32 +18,32 @@ enum APIEndpoint {
     }
 }
 
-extension APIEndpoint {
+extension APIEndpoints {
 
     /// The path for every endpoint
     var path: String {
         switch self {
-        case .getCurrentWeather(_, _, _):
+        case .getCurrentWeather(_, _):
             return "/data/2.5/weather"
         }
     }
     
     /// The method for the endpoint
-    var method: APIEndpoint.Method {
+    var method: APIEndpoints.Method {
         switch self {
         default:
             return .GET
         }
     }
     
-    /// The URL parameters for the endpoint (in case it has any)
+    /// The URL parameters for the endpoint
     var parameters: [URLQueryItem]? {
         switch self {
-        case .getCurrentWeather(let latitude, let longitude, let units):
+        case .getCurrentWeather(let latitude, let longitude):
             let queryItems = [
                 URLQueryItem(name: "lat", value: latitude),
                 URLQueryItem(name: "lon", value: longitude),
-                URLQueryItem(name: "units", value: units),
+                URLQueryItem(name: "units", value: "imperial"),
                 URLQueryItem(name: "appid", value: APIHelper.apiKey)
             ]
             return queryItems

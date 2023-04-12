@@ -17,13 +17,13 @@ class NetworkManager {
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
       
-    func getData<D: Decodable>(from endpoint: APIEndpoint) async throws -> D {
+    func getData<D: Decodable>(from endpoint: APIEndpoints) async throws -> D {
         let request = try createRequest(from: endpoint)
         let response: NetworkResponse = try await session.data(for: request)
         return try decoder.decode(D.self, from: response.data)
     }
     
-    func sendData<D: Decodable, E: Encodable>(from endpoint: APIEndpoint, with body: E) async throws -> D {
+    func sendData<D: Decodable, E: Encodable>(from endpoint: APIEndpoints, with body: E) async throws -> D {
         let request = try createRequest(from: endpoint)
         let data = try encoder.encode(body)
         let response: NetworkResponse = try await session.upload(for: request, from: data)
@@ -33,7 +33,7 @@ class NetworkManager {
 
 private extension NetworkManager {
     
-    func createRequest(from endpoint: APIEndpoint) throws -> URLRequest {
+    func createRequest(from endpoint: APIEndpoints) throws -> URLRequest {
         guard
             let urlPath = URL(string: APIHelper.baseURL.appending(endpoint.path)),
             var urlComponents = URLComponents(string: urlPath.path)
