@@ -9,11 +9,6 @@ import Foundation
 import UIKit
 import SDWebImage
 
-struct CurrentLocation {
-    let latitude: String
-    let longitude: String
-}
-
 protocol CurrentWeatherFetchDelegate: AnyObject {
     func weatherFetchCompleted()
     func imageFetchCompleted()
@@ -29,61 +24,40 @@ class CurrentWeatherViewModel {
     }
     var gozioLocation: CurrentLocation
     let networkManager = NetworkManager.shared
-    var currentWeatherImage: UIImage?
-    var currentLocation: String?
-    var currentHighLow: String?
-    var currentTemp: String?
-    var currentConditions: String?
-    var sunriseTime: String?
-    var windSpeed: String?
-    var humidity: String?
+    var objectForView: CurrentWeatherObjectForView?
     
-    init() {
-        gozioLocation = CurrentLocation(latitude: "33.78591032377107", longitude: "-84.40964058633683")
+    init(currentLocation: CurrentLocation = CurrentLocation(latitude: "33.78591032377107", longitude: "-84.40964058633683")) {
+        self.gozioLocation = currentLocation
         fetchCurrentWeather()
     }
     
     func fetchCurrentWeather() {
-        var request: URLRequest?
-        do {
-            request = try networkManager.createRequest(from: APIEndpoints.getCurrentWeather(latitude: gozioLocation.latitude, longitude: gozioLocation.longitude))
-        }
-        catch let error {
-            print("Error: \(error)")
-        }
-        guard let url = request?.url else { return }
-        
-        networkManager.makeRequest(with: url, httpMethod: "GET", requestBody: nil) { (result: Result<WeatherObject, Error>) in
-            switch result {
-            case .success(let weather):
-                self.weather = weather
-                if let currentWeatherImageURL = URL(string: APIHelper.baseImageURL + "/img/wn/\(weather.weather.first?.icon ?? "10d")@2x.png") {
+        Task.init {
+            do {
+                weather = try await networkManager.getData(from: APIEndpoints.getCurrentWeather(latitude: gozioLocation.latitude, longitude: gozioLocation.longitude))
+                if let currentWeatherImageURL = URL(string: APIHelper.baseImageURL + "/img/wn/\(weather?.weather.first?.icon ?? "10d")@2x.png") {
                     self.fetchImage(for: currentWeatherImageURL)
                 }
-            case .failure(let error):
-                print("Error: \(error)")
+            } catch {
+                print(error.localizedDescription)
             }
         }
     }
     
     func formatObjectForView() {
-        currentLocation = weather?.name
-        currentHighLow = highLowForView()
-        currentTemp = currentTempForView()
-        currentConditions = currentConditionForView()
-        sunriseTime = sunriseTimeForView()
-        windSpeed = windSpeedForView()
-        humidity = humidityForView()
+        objectForView = CurrentWeatherObjectForView(currentLocation: weather?.name ?? "Location", currentHighLow: highLowForView(), currentTemp: currentTempForView(), currentConditions: currentConditionForView(), sunriseTime: sunriseTimeForView(), windSpeed: windSpeedForView(), humidity: humidityForView())
         delegate?.weatherFetchCompleted()
     }
     
     func fetchImage(for url: URL) {
         SDWebImageManager.shared.loadImage(with: url, options: [], progress: nil) { [weak self] (image, _, _, _, _, _) in
-            self?.currentWeatherImage = image
+            self?.objectForView?.currentWeatherImage = image
             self?.delegate?.imageFetchCompleted()
         }
     }
-    
+}
+
+extension CurrentWeatherViewModel {
     func highLowForView() -> String {
         guard let max = weather?.main.tempMax, let min = weather?.main.tempMin else { return "" }
         return "H \(Int(max.rounded(.toNearestOrAwayFromZero)))ºF / L \(Int(min.rounded(.toNearestOrAwayFromZero)))ºF"

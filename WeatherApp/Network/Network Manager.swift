@@ -33,34 +33,23 @@ class NetworkManager {
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
       
-    func makeRequest<T: Decodable>(with url: URL, httpMethod: String, requestBody: Data?, completion: @escaping (Result<T, Error>) -> Void) {
-        var request = URLRequest(url: url)
-        request.httpMethod = httpMethod
-        request.httpBody = requestBody
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
-            guard let data = data else {
-                completion(.failure(NetworkError.dataError))
-                return
-            }
-
-            do {
-                let decoder = JSONDecoder()
-                let decodedData = try decoder.decode(T.self, from: data)
-                completion(.success(decodedData))
-            } catch {
-                completion(.failure(NetworkError.decoding))
-            }
-        }
-
-        task.resume()
+    func getData<D: Decodable>(from endpoint: APIEndpoints) async throws -> D {
+        let request = try createRequest(from: endpoint)
+        let response: NetworkResponse = try await session.data(for: request)
+        return try decoder.decode(D.self, from: response.data)
+    }
+    
+    func sendData<D: Decodable, E: Encodable>(from endpoint: APIEndpoints, with body: E) async throws -> D {
+        let request = try createRequest(from: endpoint)
+        let data = try encoder.encode(body)
+        let response: NetworkResponse = try await session.upload(for: request, from: data)
+        return try decoder.decode(D.self, from: response.data)
     }
 }
 
 extension NetworkManager {
     
-    func createRequest(from endpoint: APIEndpoints) throws -> URLRequest {
+    private func createRequest(from endpoint: APIEndpoints) throws -> URLRequest {
         
         guard var components = URLComponents(string: APIHelper.baseURL) else { throw NetworkError.invalidPath }
         components.path = endpoint.path

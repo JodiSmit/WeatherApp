@@ -23,25 +23,25 @@ class CurrentConditionsViewController: UIViewController {
     var viewModel: CurrentWeatherViewModel?
     
     // MARK: - View Load
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            viewModel?.delegate = self
-        }
-
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        viewModel?.delegate = self
+    }
+    
     // MARK: - Setup view
     
     func fillUI() {
-        guard let viewModel = viewModel else {
+        guard let viewModel = viewModel, let viewObject = viewModel.objectForView else {
             return
         }
-
-        currentLocation.text = viewModel.currentLocation
-        currentHighLow.text = viewModel.currentHighLow
-        currentTemp.text = viewModel.currentTemp
-        currentConditions.text = viewModel.currentConditions
-        sunriseTime.text = viewModel.sunriseTime
-        windSpeed.text = viewModel.windSpeed
-        humidity.text = viewModel.humidity
+        
+        currentLocation.text = viewObject.currentLocation
+        currentHighLow.text = viewObject.currentHighLow
+        currentTemp.text = viewObject.currentTemp
+        currentConditions.text = viewObject.currentConditions
+        sunriseTime.text = viewObject.sunriseTime
+        windSpeed.text = viewObject.windSpeed
+        humidity.text = viewObject.humidity
     }
 }
 
@@ -54,8 +54,12 @@ extension CurrentConditionsViewController: CurrentWeatherFetchDelegate {
     }
     
     func imageFetchCompleted() {
+        guard let viewModel = viewModel, let viewObject = viewModel.objectForView else {
+            return
+        }
+        
         DispatchQueue.main.async {
-            self.currentWeatherLargeImage.image = self.viewModel?.currentWeatherImage
+            self.currentWeatherLargeImage.image = viewObject.currentWeatherImage
         }
     }
 }
